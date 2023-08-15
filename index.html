@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Louvre Museum Guide</title>
+    <style>
+        body {
+
+            font-family: "Arial", sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fafafa;
+        }
+
+        header {
+            background-image: url('\\images\\image.jpg'); /* Replace with actual Louvre Museum image URL */
+            background-repeat: no-repeat;
+            background-size: cover;
+            color: #fff;
+            text-align: center;
+            padding: 1rem 0;
+            position: relative;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            display: inline-block;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        main {
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #00203f; /* Deep blue color for the title */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #007bff; /* Bright blue color for the focus state */
+        }
+
+        button {
+            background-color: #007bff; /* Bright blue color for the button */
+            color: #fff;
+            font-size: 18px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3; /* Slightly darker blue color on hover */
+        }
+
+        .conversation {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #fff;
+            margin-bottom: 20px;
+            text-align: left;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #output {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: left;
+        }
+
+        .user-message {
+            color: #007bff; /* Bright blue color for user messages */
+        }
+
+        .guide-message {
+            color: #00203f; /* Deep blue color for guide messages */
+            margin-bottom: 10px;
+        }
+
+        .footer {
+            background-color: #00203f; /* Deep blue color for the footer */
+            padding: 10px 0;
+            color: #fff;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Louvre Museum Guide</h1>
+    </header>
+
+    <main>
+        <div class="conversation" id="output"></div>
+        <input type="text" id="userInput" placeholder="Enter your message">
+        <button onclick="showMessage()">Send Message</button>
+        <br><br>
+        <div class="footer">
+            <p>© 2023 Louvre Museum Guide | All rights reserved</p>
+        </div>
+    </main>
+
+
+
+
+
+   <script>
+        const endKeywords = ['no', 'thank you', 'thanks', 'thank you!', 'thanks!','no thank you','no thanks'];
+        const continueKeywords = ['yes', 'please','oh yes', 'yes please'];
+        let previousResponses = new Set();
+        let isFirstMessage = true;
+
+        function showGreeting() {
+            if (isFirstMessage) {
+                const outputDiv = document.getElementById("output");
+                outputDiv.innerHTML += "<p>Guide: Welcome to the Louvre Museum! I'm here to provide you with information and answer any questions you may have.</p>";
+                isFirstMessage = false;
+            }
+        }
+
+        async function showMessage() {
+            showGreeting();
+
+            while (true) {
+                const userInput = document.getElementById("userInput").value.trim();
+
+                if (userInput === '') {
+                    return;
+                }
+
+                const outputDiv = document.getElementById("output");
+                outputDiv.innerHTML += "<p>User: " + userInput + "</p>";
+
+                if (endKeywords.includes(userInput.toLowerCase())) {
+                    outputDiv.innerHTML += "<p>Guide: Enjoy your time exploring the incredible art at the Louvre Museum!</p>";
+                    previousResponses.clear();
+                    break;
+                } else {
+                    let continueConversation = false;
+
+                    if (continueKeywords.includes(userInput.toLowerCase())) {
+                        continueConversation = true;
+                        outputDiv.innerHTML += "<p>Guide: Sure, ask whatever you want!</p>";
+                    } else {
+                        try {
+                            const response = await fetch('/generate_text', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ sequence: userInput }),  // Ensure the key matches with the server-side variable name
+                            });
+
+                            const data = await response.json();
+
+                            if (response.ok) {
+                                const guideResponse = data.generated_text;
+                                outputDiv.innerHTML += "<p>Guide: " + guideResponse + "</p>";
+                                outputDiv.innerHTML += "<p>Guide: Do you need anything else?</p>";
+                            } else {
+                                outputDiv.innerHTML = "Error: Failed to generate text.";
+                                return;
+                            }
+                        } catch (error) {
+                            outputDiv.innerHTML = "Error: " + error.message;
+                            return;
+                        }
+                    }
+
+                    previousResponses.add(userInput.toLowerCase());
+                    document.getElementById("userInput").value = '';
+
+                    if (!continueConversation) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Call showMessage() when the page loads
+        showMessage();
+    </script>
+</body>
+</html>
